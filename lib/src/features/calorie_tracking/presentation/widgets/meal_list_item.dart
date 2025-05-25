@@ -1,52 +1,49 @@
+import 'package:calorie_tracker_app/src/features/calorie_tracking/data/calorie_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 class MealListItem extends StatelessWidget {
-  final String calories;
-  final String time;
+  final CalorieEntry entry;
+  final VoidCallback? onTap;
 
   const MealListItem({
     super.key,
-    required this.calories,
-    required this.time,
+    required this.entry,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      constraints: const BoxConstraints(minHeight: 72.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                calories,
-                style: GoogleFonts.manrope(
-                  textStyle: const TextStyle(
-                    color: Color(0xFF111518),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+    final theme = Theme.of(context);
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        color: theme.cardColor, // Use theme color
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        constraints: const BoxConstraints(minHeight: 72.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "${entry.amount} cal",
+                  style: theme.textTheme.titleMedium?.copyWith(fontFamily: GoogleFonts.manrope().fontFamily, fontWeight: FontWeight.w500), // Use theme text style
+                ),
+                Text(
+                  DateFormat.jm().format(entry.createdAt), // Format time from CalorieEntry
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontFamily: GoogleFonts.manrope().fontFamily,
+                    color: theme.hintColor, // Use theme hint color
                   ),
                 ),
-              ),
-              Text(
-                time,
-                style: GoogleFonts.manrope(
-                  textStyle: const TextStyle(
-                    color: Color(0xFF637688),
-                    fontSize: 14,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

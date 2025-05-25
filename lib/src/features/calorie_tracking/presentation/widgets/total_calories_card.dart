@@ -11,10 +11,11 @@ class TotalCaloriesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0F2F4),
+        color: theme.colorScheme.surfaceVariant, // Use theme color
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Column(
@@ -23,24 +24,15 @@ class TotalCaloriesCard extends StatelessWidget {
         children: [
           Text(
             "Total Calories",
-            style: GoogleFonts.manrope(
-              textStyle: const TextStyle(
-                color: Color(0xFF111518),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            style: theme.textTheme.titleMedium?.copyWith(fontFamily: GoogleFonts.manrope().fontFamily) , // Use theme text style
           ),
           const SizedBox(height: 4),
           Text(
             totalCalories.toString(),
-            style: GoogleFonts.manrope(
-              textStyle: const TextStyle(
-                color: Color(0xFF111518),
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.5,
-              ),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontFamily: GoogleFonts.manrope().fontFamily,
+              fontWeight: FontWeight.bold, // Keep bold as per original design
+              letterSpacing: -0.5, // Keep letterSpacing as per original design
             ),
           ),
         ],

@@ -15,16 +15,15 @@ class DailyLogScreen extends ConsumerWidget {
 
   void _showAddCalorieDialog(BuildContext context, WidgetRef ref) {
     final TextEditingController calorieController = TextEditingController();
+    final theme = Theme.of(context);
+
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: Text(
             "Add Calorie Entry",
-            style: GoogleFonts.manrope(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+            style: theme.textTheme.titleLarge?.copyWith(fontFamily: GoogleFonts.manrope().fontFamily),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -35,34 +34,26 @@ class DailyLogScreen extends ConsumerWidget {
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: "Calories (kcal)",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
                 ),
+                style: GoogleFonts.manrope(),
               ),
             ],
           ),
           actions: <Widget>[
             TextButton(
-              child: Text(
-                "Cancel",
-                style: GoogleFonts.manrope(color: Colors.black54),
-              ),
+              child: const Text("Cancel"),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
             ),
             TextButton(
-              child: Text(
-                "Save",
-                style: GoogleFonts.manrope(color: const Color(0xFF268AE8)),
-              ),
+              child: const Text("Save"),
               onPressed: () async {
                 final amount = int.tryParse(calorieController.text);
                 if (amount != null && amount > 0) {
                   final newEntry = CalorieEntry(
                     amount: amount,
-                    createdAt: DateTime.now(),
+                    createdAt: DateTime.now(), // For new entries, createdAt is now
                   );
                   try {
                     await ref
@@ -71,10 +62,70 @@ class DailyLogScreen extends ConsumerWidget {
                     Navigator.of(dialogContext).pop();
                   } catch (e) {
                     debugPrint("Error adding entry: $e");
-                    // Optionally show an error message to the user
                   }
                 } else {
-                  // Optionally show an error message for invalid input
+                  debugPrint("Invalid calorie amount entered");
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditCalorieDialog(BuildContext context, WidgetRef ref, CalorieEntry entry) {
+    final TextEditingController calorieController =
+        TextEditingController(text: entry.amount.toString());
+    final theme = Theme.of(context);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            "Edit Calorie Entry",
+            style: theme.textTheme.titleLarge?.copyWith(fontFamily: GoogleFonts.manrope().fontFamily),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              TextField(
+                controller: calorieController,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: "Calories (kcal)",
+                ),
+                style: GoogleFonts.manrope(),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("Cancel"),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Save"),
+              onPressed: () async {
+                final amount = int.tryParse(calorieController.text);
+                if (amount != null && amount > 0) {
+                  final updatedEntry = CalorieEntry(
+                    amount: amount,
+                    createdAt: entry.createdAt, // Preserve original createdAt
+                  )..id = entry.id; // Preserve original id
+                  try {
+                    await ref
+                        .read(calorieRepositoryProvider)
+                        .updateEntry(updatedEntry);
+                    Navigator.of(dialogContext).pop();
+                  } catch (e) {
+                    debugPrint("Error updating entry: $e");
+                  }
+                } else {
                   debugPrint("Invalid calorie amount entered");
                 }
               },
@@ -107,16 +158,16 @@ class DailyLogScreen extends ConsumerWidget {
     final selectedDate = ref.watch(selectedDateProvider);
     final totalCalories = ref.watch(totalCaloriesForSelectedDateProvider);
     final entriesAsyncValue = ref.watch(entriesForSelectedDateProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
           icon: SvgPicture.asset(
             'lib/src/assets/icons/caret_left.svg',
-            colorFilter:
-                const ColorFilter.mode(Color(0xFF111518), BlendMode.srcIn),
+            colorFilter: ColorFilter.mode(
+                theme.appBarTheme.iconTheme?.color ?? theme.colorScheme.onSurface,
+                BlendMode.srcIn),
             width: 24,
             height: 24,
           ),
@@ -124,21 +175,14 @@ class DailyLogScreen extends ConsumerWidget {
             ref.read(selectedDateProvider.notifier).goToPreviousDay();
           },
         ),
-        title: Text(
-          _formatDate(selectedDate),
-          style: GoogleFonts.manrope(
-            color: const Color(0xFF111518),
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        centerTitle: true,
+        title: Text(_formatDate(selectedDate)),
         actions: [
           IconButton(
             icon: SvgPicture.asset(
               'lib/src/assets/icons/caret_right.svg',
-              colorFilter:
-                  const ColorFilter.mode(Color(0xFF111518), BlendMode.srcIn),
+              colorFilter: ColorFilter.mode(
+                  theme.appBarTheme.actionsIconTheme?.color ?? theme.appBarTheme.iconTheme?.color ?? theme.colorScheme.onSurface,
+                  BlendMode.srcIn),
               width: 24,
               height: 24,
             ),
@@ -158,13 +202,7 @@ class DailyLogScreen extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 16.0, bottom: 8.0),
               child: Text(
                 "Meals",
-                style: GoogleFonts.manrope(
-                  textStyle: const TextStyle(
-                    color: Color(0xFF111518),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                style: theme.textTheme.titleLarge,
               ),
             ),
             entriesAsyncValue.when(
@@ -175,29 +213,59 @@ class DailyLogScreen extends ConsumerWidget {
                       padding: const EdgeInsets.symmetric(vertical: 24.0),
                       child: Text(
                         "No records yet.",
-                        style: GoogleFonts.manrope(
-                          textStyle: const TextStyle(
-                            color: Color(0xFF637688),
-                            fontSize: 16,
-                          ),
-                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
                       ),
                     ),
                   );
                 }
-                return ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    return MealListItem(
-                      calories: "${entry.amount} cal",
-                      time: DateFormat.jm().format(entry.createdAt),
-                    );
-                  },
-                  separatorBuilder: (context, index) =>
-                      const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                return Expanded( // Added Expanded here
+                  child: ListView.separated(
+                    shrinkWrap: true, // Can be true if parent is not Expanded, but Expanded is better here
+                    // physics: const NeverScrollableScrollPhysics(), // Not needed if ListView is Expanded
+                    itemCount: entries.length,
+                    itemBuilder: (context, index) {
+                      final entry = entries[index];
+                      return Dismissible(
+                        key: ValueKey(entry.id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: theme.colorScheme.errorContainer,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          child: Icon(
+                            Icons.delete,
+                            color: theme.colorScheme.onErrorContainer,
+                          ),
+                        ),
+                        onDismissed: (direction) async {
+                          try {
+                            await ref.read(calorieRepositoryProvider).deleteEntry(entry.id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Entry deleted', style: GoogleFonts.manrope()),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          } catch (e) {
+                             debugPrint("Error deleting entry: $e");
+                             ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error deleting entry', style: GoogleFonts.manrope()),
+                                duration: const Duration(seconds: 2),
+                                backgroundColor: theme.colorScheme.error,
+                              ),
+                            );
+                          }
+                        },
+                        child: MealListItem(
+                          entry: entry,
+                          onTap: () => _showEditCalorieDialog(context, ref, entry),
+                        ),
+                      );
+                    },
+                    separatorBuilder: (context, index) =>
+                        Divider(height: 1, color: theme.dividerColor),
+                  ),
                 );
               },
               loading: () =>
@@ -210,11 +278,12 @@ class DailyLogScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddCalorieDialog(context, ref),
-        backgroundColor: const Color(0xFF268AE8),
-        shape: const CircleBorder(),
         child: SvgPicture.asset(
           'lib/src/assets/icons/plus.svg',
-          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          colorFilter: ColorFilter.mode(
+            theme.floatingActionButtonTheme.foregroundColor ?? Colors.white,
+            BlendMode.srcIn
+          ),
           width: 24,
           height: 24,
         ),
